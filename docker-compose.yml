@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
       args:
         DATABASE_TYPE: "${DATABASE_TYPE:-postgresql}"
-        BASE_PATH: "${BASE_PATH:-/}"
+        BASE_PATH: "${BASE_PATH:-}"
         ALLOWED_FRAME_URLS: "${BASE_PATH:-http://localhost:3000}"
     environment:
       NODE_ENV: production
