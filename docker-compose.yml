@@ -8,6 +8,7 @@ services:
       args:
         DATABASE_TYPE: "${DATABASE_TYPE:-postgresql}"
         BASE_PATH: "${BASE_PATH:-/}"
+        ALLOWED_FRAME_URLS: "${BASE_PATH:-http://localhost:3000}"
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
@@ -28,7 +29,6 @@ services:
       - DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@postgresql:5432/$POSTGRES_DB
       - DATABASE_TYPE=postgres
       - APP_SECRET=$SERVICE_PASSWORD_64_UMAMI
-      - ALLOWED_FRAME_URLS=http://localhost:3000 https://app.tickable.nl
     depends_on:
       postgresql:
         condition: service_healthy
