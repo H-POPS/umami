@@ -1,36 +1,67 @@
----
+version: "3.9"
+
 services:
-  umami:
-    image: ghcr.io/umami-software/umami:postgresql-latest
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATABASE_TYPE: "${DATABASE_TYPE:-postgresql}"
+        BASE_PATH: "${BASE_PATH:-/}"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_TYPE: "${DATABASE_TYPE:-postgresql}"
+      BASE_PATH: "${BASE_PATH:-/}"
+      NODE_OPTIONS: "${NODE_OPTIONS:-}"
     ports:
-      - '3000:3000'
-    environment:
-      DATABASE_URL: postgresql://umami:umami@db:5432/umami
-      DATABASE_TYPE: postgresql
-      APP_SECRET: replace-me-with-a-random-string
+      - "3001:3000" # Next.js accessible on localhost:3001
+    restart: always
     depends_on:
-      db:
-        condition: service_healthy
-    init: true
-    restart: always
-    healthcheck:
-      test: ['CMD-SHELL', 'curl http://localhost:3000/api/heartbeat']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-  db:
-    image: postgres:15-alpine
+      - postgresql
+      - umami
+
+  umami:
+    image: "ghcr.io/umami-software/umami:postgresql-latest"
     environment:
-      POSTGRES_DB: umami
-      POSTGRES_USER: umami
-      POSTGRES_PASSWORD: umami
-    volumes:
-      - umami-db-data:/var/lib/postgresql/data
-    restart: always
+      - SERVICE_URL_UMAMI_3000
+      - DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@postgresql:5432/$POSTGRES_DB
+      - DATABASE_TYPE=postgres
+      - APP_SECRET=$SERVICE_PASSWORD_64_UMAMI
+      - ALLOWED_FRAME_URLS=http://localhost:3000 https://app.tickable.nl
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    ports:
+      - "3000:3000" # Umami dashboard accessible on localhost:3000
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      test:
+        - CMD
+        - curl
+        - "-f"
+        - "http://127.0.0.1:3000/api/heartbeat"
       interval: 5s
-      timeout: 5s
-      retries: 5
+      timeout: 20s
+      retries: 10
+    restart: always
+    init: true
+
+  postgresql:
+    image: "postgres:16-alpine"
+    volumes:
+      - "postgresql-data:/var/lib/postgresql/data"
+    environment:
+      - POSTGRES_USER=$SERVICE_USER_POSTGRES
+      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      - POSTGRES_DB=${POSTGRES_DB:-umami}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+      interval: 5s
+      timeout: 20s
+      retries: 10
+    restart: always
+
 volumes:
-  umami-db-data:
+  postgresql-data:
