@@ -10,15 +10,16 @@ services:
         BASE_PATH: "${BASE_PATH:-}"
         ALLOWED_FRAME_URLS: "${ALLOWED_FRAME_URLS:-http://localhost:3000}"
     environment:
-      - SERVICE_URL_UMAMI_3000
-      - 'DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@postgresql:5432/$POSTGRES_DB'
-      - DATABASE_TYPE=postgres
-      - APP_SECRET=$SERVICE_PASSWORD_64_UMAMI
-      - NODE_ENV=production
-      - NEXT_TELEMETRY_DISABLED=1
-      - BASE_PATH=${BASE_PATH:-}
-      - ALLOWED_FRAME_URLS=${ALLOWED_FRAME_URLS:-http://localhost:3000}
-      - NODE_OPTIONS=${NODE_OPTIONS:-}
+      # application / runtime vars (all as key: "value")
+      SERVICE_URL_UMAMI_3000: "${SERVICE_URL_UMAMI_3000:-}"
+      DATABASE_URL: "postgres://${SERVICE_USER_POSTGRES:-umami}:${SERVICE_PASSWORD_POSTGRES:-umami}@postgresql:5432/${POSTGRES_DB:-umami}"
+      DATABASE_TYPE: "${DATABASE_TYPE:-postgres}"
+      APP_SECRET: "${SERVICE_PASSWORD_64_UMAMI:-replace-me-with-a-random-string}"
+      NODE_ENV: "production"
+      NEXT_TELEMETRY_DISABLED: "1"
+      BASE_PATH: "${BASE_PATH:-}"
+      ALLOWED_FRAME_URLS: "${ALLOWED_FRAME_URLS:-http://localhost:3000}"
+      NODE_OPTIONS: "${NODE_OPTIONS:-}"
     ports:
       - "3000:3000"
     depends_on:
@@ -36,13 +37,13 @@ services:
       retries: 10
 
   postgresql:
-    image: 'postgres:16-alpine'
+    image: "postgres:16-alpine"
     volumes:
-      - 'postgresql-data:/var/lib/postgresql/data'
+      - "postgresql-data:/var/lib/postgresql/data"
     environment:
-      - POSTGRES_USER=$SERVICE_USER_POSTGRES
-      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
-      - 'POSTGRES_DB=${POSTGRES_DB:-umami}'
+      POSTGRES_USER: "${SERVICE_USER_POSTGRES:-umami}"
+      POSTGRES_PASSWORD: "${SERVICE_PASSWORD_POSTGRES:-umami}"
+      POSTGRES_DB: "${POSTGRES_DB:-umami}"
     restart: always
     healthcheck:
       test:
