@@ -1,67 +1,56 @@
 version: "3.9"
 
 services:
-  web:
+  umami:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         DATABASE_TYPE: "${DATABASE_TYPE:-postgresql}"
         BASE_PATH: "${BASE_PATH:-}"
-        ALLOWED_FRAME_URLS: "${BASE_PATH:-http://localhost:3000}"
-    environment:
-      NODE_ENV: production
-      NEXT_TELEMETRY_DISABLED: "1"
-      DATABASE_TYPE: "${DATABASE_TYPE:-postgresql}"
-      BASE_PATH: "${BASE_PATH:-/}"
-      NODE_OPTIONS: "${NODE_OPTIONS:-}"
-    ports:
-      - "3001:3000" # Next.js accessible on localhost:3001
-    restart: always
-    depends_on:
-      - postgresql
-      - umami
-
-  umami:
-    image: "ghcr.io/umami-software/umami:postgresql-latest"
+        ALLOWED_FRAME_URLS: "${ALLOWED_FRAME_URLS:-http://localhost:3000}"
     environment:
       - SERVICE_URL_UMAMI_3000
-      - DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@postgresql:5432/$POSTGRES_DB
+      - 'DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@postgresql:5432/$POSTGRES_DB'
       - DATABASE_TYPE=postgres
       - APP_SECRET=$SERVICE_PASSWORD_64_UMAMI
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - BASE_PATH=${BASE_PATH:-}
+      - ALLOWED_FRAME_URLS=${ALLOWED_FRAME_URLS:-http://localhost:3000}
+      - NODE_OPTIONS=${NODE_OPTIONS:-}
+    ports:
+      - "3000:3000"
     depends_on:
       postgresql:
         condition: service_healthy
-    ports:
-      - "3000:3000" # Umami dashboard accessible on localhost:3000
+    restart: always
     healthcheck:
       test:
         - CMD
         - curl
-        - "-f"
-        - "http://127.0.0.1:3000/api/heartbeat"
+        - '-f'
+        - 'http://127.0.0.1:3000/api/heartbeat'
       interval: 5s
       timeout: 20s
       retries: 10
-    restart: always
-    init: true
 
   postgresql:
-    image: "postgres:16-alpine"
+    image: 'postgres:16-alpine'
     volumes:
-      - "postgresql-data:/var/lib/postgresql/data"
+      - 'postgresql-data:/var/lib/postgresql/data'
     environment:
       - POSTGRES_USER=$SERVICE_USER_POSTGRES
       - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
-      - POSTGRES_DB=${POSTGRES_DB:-umami}
+      - 'POSTGRES_DB=${POSTGRES_DB:-umami}'
+    restart: always
     healthcheck:
       test:
         - CMD-SHELL
-        - "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        - 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'
       interval: 5s
       timeout: 20s
       retries: 10
-    restart: always
 
 volumes:
   postgresql-data:
